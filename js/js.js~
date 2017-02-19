@@ -1,0 +1,271 @@
+$(document).ready(function(){
+
+    var started = false;
+    var Playing_cards_values={
+        2: 2,
+        3: 3,
+        4: 4,
+        5: 5,
+        6: 6,
+        7: 7,
+        8: 8,
+        9: 9,
+        10: 10,
+        'В': 10,
+        'Д': 10,
+        'К': 10,
+        'Т': 11
+    };
+    var Playing_cards=Object.keys(Playing_cards_values);
+    var Playing_cards_icon=['bubno.jpg','chirv.jpg','hrest.jpg','pico.jpg'];
+    var karta=$(".game1").html();
+    var i=0;
+    var j=0;
+    $('.game1').remove();
+
+
+//Функція очищення ігрового столу у випадку гравець здався
+    function clear(){
+        $(".count>form>input").eq(1).val(0);
+        $(".player>h2").text(0);
+        $('.info').text('Зробіть свою ставку');
+        $('.info').show();
+        $('.card').remove();
+        $('.after').hide();
+        $(".info-player").text("");
+        $(".info-duler").text("");
+        i=0;
+        j=0;
+    }
+
+//Функція вибірки випадкового числа
+    function getRandomInRange(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+//Функція, яка відповідає за ставку коштів гравця
+    $(".fishka").click(function(){
+        if (!started) {
+            var fishka=Number($(this).text());
+            var res=Number($(".count>form>input").eq(0).val());
+            if( res<=fishka){
+                alert("У вас не вистачає коштів!!!");
+            }
+            else {
+            var last_stavka=Number($(".player>h2").text());
+            var stavka=last_stavka+fishka;
+
+            $('.info').hide();
+            if (stavka>0) {
+              //  $(".before>.action").show();
+                $('.before').show();
+            }
+            if(stavka<=2000 ){
+                $(".player>h2").text(stavka);
+                $(".count>form>input").eq(1).val(stavka);
+                $(".count>form>input").eq(0).val(res-fishka);
+            }
+           else
+            alert("Ви намагаєтесь перевищити розмір максимальної ставки");
+            }
+        }
+    })
+
+//Функція, яка роздає перші дві карти гравцю та одну компютеру.
+    function cardsToplayer(){
+        started = true;
+        addCardPlayer();
+        addCardPlayer ();
+        addCardComp();
+        valid();
+        $('.game').show();
+        $('.duler').show();
+        $('.before').hide();
+        $('.after').show();
+}
+//Функція для підбирання карти гравцю
+    function addCardPlayer(){
+        $(".game").append(karta);
+        var bloc=$(".game>.card");
+        $(".game>.card>h2").eq(i).text(Playing_cards[getRandomInRange(0,12)]);
+        $(".game>.card>img").eq(i).attr("src","img/"+Playing_cards_icon[getRandomInRange(0,3)]);
+        if(i>0){
+         var s=bloc.eq(i-1).css('margin-left');
+        var marg=Number(s.substring(0,3));
+         bloc.eq(i).css({
+             'margin-left':marg+Number(30),
+             'z-index': 100+i
+         });
+            countPoints();
+        }
+        if(Number($(".info-player").text())>21){
+            $('.info').show();
+            $('.info').text("Ви програли!!!");
+            setTimeout(clear,4000);
+        }
+        i++;
+    }
+
+//Функція для підбирання компютеру
+    function addCardComp(){
+        $(".duler").append(karta);
+        var bloc=$(".duler>.card");
+        $(".duler>.card>h2").eq(j).text(Playing_cards[getRandomInRange(0,12)]);
+        $(".duler>.card>img").eq(j).attr("src","img/"+Playing_cards_icon[getRandomInRange(0,3)]);
+        if(j>0){
+            var s=bloc.eq(j-1).css('margin-left');
+            var marg=Number(s.substring(0,3));
+            bloc.eq(j).css({
+                'margin-left':marg+Number(30),
+                'margin-top': '15px'
+            });
+        }
+            else{
+            bloc.eq(j).css({ 'margin-top': '15px'});
+        }
+        countPointsComp();
+        j++;
+    }
+
+//Функція, яка відміняє ставку гравця
+    function cancelRate(){
+    var stavka=Number($(".count>form>input").eq(1).val());
+    var rahunok=Number($(".count>form>input").eq(0).val())
+    $(".count>form>input").eq(0).val(rahunok+stavka);
+    $(".before").hide();
+        
+}
+//Функція, яка дає змогу подвоїти ставку 
+    function doubleRate(){
+            var stavka=Number($(".player>h2").text())*2;
+        if(stavka<=2000){
+            var res=Number($(".count>form>input").eq(0).val());
+            $(".player>h2").text(stavka);
+            $(".count>form>input").eq(1).val(stavka);
+            $(".count>form>input").eq(0).val(res-stavka/2);
+        }
+       else
+        alert("Ви намагаєтесь перевищити розмір максимальної ставки");
+
+}
+//Функція  - здатися
+    function playerGaveUp(){
+        var res=Number($(".count>form>input").eq(0).val());
+        var gave_up=Number($(".player>h2").text())/2+res;
+        $(".count>form>input").eq(0).val(gave_up);
+
+}
+
+//Функція рахує кількість очок гравця
+    function countPoints(){
+        var count=0;
+        var tcount = 0;
+        $(".game>.card>h2").each(function () {
+            var val = $.trim($(this).text());
+            if (val === 'Т') {
+                tcount++;
+            }
+            count += Playing_cards_values[val];
+        });
+        while (count > 21 && tcount > 0) {
+            count -= 10;
+            tcount--;
+        }
+        $(".info-player").text(count);
+    }
+//Функція рахує кількість очок компютера
+    function countPointsComp(){
+        var count=0;
+        for(var i=0;i<=$(".duler>.card>h2").length-1;i++){
+            var N=Number($(".duler>.card>h2").eq(i).text());
+            var T=String($(".duler>.card>h2").eq(i).text());
+            if(isNaN(N)){
+                N=10;
+            }
+            if(T=='Т'){
+                N=11;
+            }
+            count=count+N;
+            if(i==$(".duler>.card>h2").length-1){
+                $(".info-duler").text(count);
+            }
+
+        }
+    }
+
+//Функція провіряє чи не виграв гравець заздалегіть
+    function valid(){
+        var res=Number($(".count>form>input").eq(0).val());
+        var stavka=Number($(".player>h2").text());
+        if(Number($(".info-player").text())==21){
+            $('.info').show();
+            $('.info').text("Ви виграли");
+            $(".count>form>input").eq(0).val(res+stavka*2);
+            setTimeout(clear, 4000);
+
+        }
+        else if(Number($(".info-player").text())>21){
+            $('.info').show();
+            $('.info').text("Ви програли");
+            $(".count>form>input").eq(0).val(res-stavka);
+        }
+    }
+    //Функція оголошує переможця
+    function stop(){
+        while(Number($(".info-duler").text())<17){
+            addCardComp();
+            countPointsComp();
+        }
+        console.log($(".info-duler").text());
+        console.log($(".info-player").text());
+        var res=Number($(".count>form>input").eq(0).val());
+        var stavka=Number($(".player>h2").text());
+        $('.info').show();
+
+        if(Number($(".info-duler").text())<Number($(".info-player").text()) || Number($(".info-duler").text())>21) {
+            $('.info').text("Ви виграли!!!");
+            $(".count>form>input").eq(0).val(res+stavka*2);
+
+        }
+        if(Number($(".info-duler").text())>Number($(".info-player").text()) && Number($(".info-duler").text())<=21 ){
+            $(".count>form>input").eq(0).val(res-stavka);
+            $('.info').text("Ви програли!!!");
+        }
+        if(Number($(".info-duler").text())==Number($(".info-player").text())){
+            $(".count>form>input").eq(0).val(res+stavka);
+            $('.info').text("Нічия");
+        }
+        setTimeout(clear, 4000);
+    }
+
+
+
+//Граємо!!!
+ //Роздаємо по перших дві карти гравцям
+    $(".action").click(function() {
+       cardsToplayer();
+    })
+//Відміняємо ставку гравця
+   $(".cancel").click(function(){
+        cancelRate();
+        clear();
+    })
+//Подвоюємо ставку 
+    $(".opt").eq(0).click(function(){
+        doubleRate();
+    })
+
+//Здаємося
+ $(".opt").eq(1).click(function(){
+        playerGaveUp();
+        clear();
+    })
+ //Добавляємо карту гравцю
+    $(".opt").eq(2).click(function(){
+        addCardPlayer();
+    })
+    //Зупиняємося )))
+    $(".opt").eq(3).click(function(){
+         stop();
+    })
+})
